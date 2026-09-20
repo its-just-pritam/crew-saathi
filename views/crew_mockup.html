@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Crew Saathi — Crew Roster</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --panel: #161d2e;
+    --tile: #1c2438;
+    --border: #2a3350;
+    --text: #e6e9f0;
+    --muted: #8892a6;
+    --active: #35c97f;
+    --leave: #f2b84b;
+    --training: #5b8cff;
+    --inactive: #f2554b;
+    --accent: #5b8cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+  }
+  .sidebar {
+    width: 220px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    flex-shrink: 0;
+    height: 100vh;
+    overflow-y: auto;
+    position: fixed;
+    left: 0;
+    top: 0;
+  }
+  .sidebar-logo {
+    padding: 0 20px 24px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo a {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }
+  .sidebar-logo a span {
+    color: var(--accent);
+  }
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-nav a {
+    color: var(--muted);
+    text-decoration: none;
+    padding: 10px 20px;
+    font-size: 13px;
+    transition: color 0.12s ease, background 0.12s ease;
+    border-left: 3px solid transparent;
+  }
+  .sidebar-nav a:hover {
+    color: var(--text);
+    background: rgba(91, 140, 255, 0.1);
+  }
+  .sidebar-nav a.active {
+    color: var(--accent);
+    background: rgba(91, 140, 255, 0.15);
+    border-left-color: var(--accent);
+  }
+  .timezone-selector {
+    padding: 16px 20px;
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+  }
+  .timezone-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .timezone-buttons {
+    display: flex;
+    gap: 6px;
+  }
+  .tz-btn {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .tz-btn:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .tz-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .main-content {
+    margin-left: 220px;
+    flex: 1;
+    padding: 24px 32px 48px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: 0.3px;
+  }
+  h1 span { color: var(--accent); }
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toolbar input, .toolbar select {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .legend .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .summary-bar {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .summary-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    min-width: 120px;
+  }
+  .summary-card .num { font-size: 22px; font-weight: 600; }
+  .summary-card .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .group { margin-bottom: 34px; }
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .group-header h2 {
+    font-size: 15px;
+    margin: 0;
+    letter-spacing: 0.4px;
+  }
+  .group-header .count {
+    font-size: 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 2px 10px;
+    border-radius: 999px;
+  }
+  .group-header .caret {
+    color: var(--muted);
+    transition: transform 0.15s ease;
+    font-size: 11px;
+  }
+  .group.collapsed .caret { transform: rotate(-90deg); }
+  .group.collapsed .tiles { display: none; }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .tile {
+    background: var(--tile);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 14px 12px;
+    position: relative;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+  .tile:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .tile.highlight {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .tile .status-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: 10px 0 0 10px;
+  }
+  .tile .name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .tile .crew-id {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .tile .row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .tile .row span:last-child { color: var(--text); text-align: right; }
+  .tile .ratings {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .rating-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(91,140,255,0.15);
+    color: var(--accent);
+  }
+  .tile .status-pill {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .cert-link {
+    display: inline-block;
+    margin-top: 8px;
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .status-active { background: rgba(53,201,127,0.15); color: var(--active); }
+  .status-leave { background: rgba(242,184,75,0.15); color: var(--leave); }
+  .status-training { background: rgba(91,140,255,0.15); color: var(--training); }
+  .status-inactive { background: rgba(242,85,75,0.15); color: var(--inactive); }
+
+  .status-active.status-bar { background: var(--active); }
+  .status-leave.status-bar { background: var(--leave); }
+  .status-training.status-bar { background: var(--training); }
+  .status-inactive.status-bar { background: var(--inactive); }
+
+  .reserve-toggle, .risk-toggle {
+    font-size: 11px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 8px;
+    margin-left: 6px;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .reserve-toggle {
+    color: var(--accent);
+  }
+  .risk-toggle {
+    color: var(--inactive);
+  }
+  .reserve-toggle:hover, .risk-toggle:hover {
+    text-decoration: underline;
+  }
+
+  .risk-score-low {
+    color: var(--active);
+  }
+  .risk-score-medium {
+    color: var(--leave);
+  }
+  .risk-score-high {
+    color: var(--inactive);
+  }
+
+  .risk-driver {
+    margin-bottom: 8px;
+    padding: 8px;
+    background: rgba(242, 85, 75, 0.1);
+    border-left: 3px solid var(--inactive);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+  .modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-content {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-header h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text);
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-close:hover {
+    color: var(--text);
+  }
+  .reserve-row {
+    margin-bottom: 16px;
+  }
+  .reserve-row:last-child {
+    margin-bottom: 0;
+  }
+  .reserve-label {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .reserve-value {
+    color: var(--text);
+    font-size: 13px;
+  }
+  .dates-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  .dates-table thead {
+    background: rgba(91, 140, 255, 0.1);
+  }
+  .dates-table th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+  }
+  .dates-table td {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid rgba(42, 51, 80, 0.5);
+  }
+  .dates-table tr:last-child td {
+    border-bottom: none;
+  }
+  .dates-table tbody tr:hover {
+    background: rgba(91, 140, 255, 0.05);
+  }
+
+  .empty-msg {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 20px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <a href="crew_mockup.html">Crew<span>Saathi</span></a>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="crew_mockup.html" class="active">Crew Roster</a>
+    <a href="certifications_mockup.html">Certifications</a>
+    <a href="duty_clocks_mockup.html">Duty Clocks</a>
+    <a href="flights_mockup.html">Flights</a>
+    <a href="rosters_mockup.html">Rosters</a>
+    <a href="rules_mockup.html">Rules</a>
+  </nav>
+  <div class="timezone-selector">
+    <span class="timezone-label">Time Zone</span>
+    <div class="timezone-buttons">
+      <button class="tz-btn active" data-tz="UTC" onclick="setTimeZone('UTC')">UTC</button>
+      <button class="tz-btn" data-tz="LOCAL" onclick="setTimeZone('LOCAL')">Local</button>
+    </div>
+  </div>
+</aside>
+
+<div class="main-content">
+<header>
+  <h1>Crew<span>Saathi</span> — Crew Roster</h1>
+  <div class="toolbar">
+    <input id="searchBox" type="text" placeholder="Search crew id or name…" />
+    <select id="statusFilter">
+      <option value="all">All statuses</option>
+      <option value="active">Active</option>
+      <option value="leave">Leave</option>
+      <option value="training">Training</option>
+    </select>
+    <select id="baseFilter">
+      <option value="all">All bases</option>
+    </select>
+    <select id="reserveFilter">
+      <option value="all">All reserve</option>
+      <option value="on-reserve">On Reserve</option>
+      <option value="not-reserve">Not on Reserve</option>
+    </select>
+    <select id="riskFilter">
+      <option value="all">All risk levels</option>
+      <option value="high-risk">High Risk</option>
+      <option value="medium-risk">Medium Risk</option>
+      <option value="low-risk">Low Risk</option>
+    </select>
+    <select id="crewFilter">
+      <option value="all">All crew</option>
+    </select>
+  </div>
+</header>
+
+<div class="legend">
+  <span><span class="dot" style="background:var(--active)"></span>Active</span>
+  <span><span class="dot" style="background:var(--leave)"></span>Leave</span>
+  <span><span class="dot" style="background:var(--training)"></span>Training</span>
+</div>
+
+<div class="summary-bar" id="summaryBar"></div>
+
+<div id="groupsContainer"></div>
+
+<div id="reserveModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalCrewName"></h2>
+      <button class="modal-close" onclick="closeReserveModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="riskModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="riskModalTitle"></h2>
+      <button class="modal-close" onclick="closeRiskModal()">✕</button>
+    </div>
+    <div id="riskModalBody"></div>
+  </div>
+</div>
+
+<script>
+const CREW_URL = "data/crew.json";
+const RESERVE_POOL_URL = "data/reserve_pool.json";
+const RISK_SIGNALS_URL = "data/risk_signals.json";
+const RANK_ORDER = ["Captain", "First Officer", "Senior Cabin Crew", "Cabin Crew"];
+let reservePoolByCrewId = {};
+let riskSignalsById = {};
+let globalTimeZone = localStorage.getItem('timeZone') || 'UTC';
+
+// Try hash first (server won't strip it), then fall back to query string
+function getCrewIdFromLocation() {
+  // Try new hash format: #crew_id=...
+  if (window.location.hash) {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const fromHash = hashParams.get("crew_id");
+    if (fromHash) return decodeURIComponent(fromHash);
+  }
+  // Fall back to query string for backward compatibility
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get("crew_id");
+  if (fromQuery) return fromQuery;
+  // Fall back to old hash format: #crew-...
+  const hashMatch = window.location.hash.match(/crew-(.+)$/);
+  return hashMatch ? decodeURIComponent(hashMatch[1]) : null;
+}
+
+function statusClass(status) {
+  if (status === "active") return "status-active";
+  if (status === "leave") return "status-leave";
+  if (status === "training") return "status-training";
+  return "status-inactive";
+}
+
+function convertUTCtoLocal(timeStr) {
+  const [hours, minutes] = timeStr.split(':');
+  const utcDate = new Date(`2000-01-01T${hours}:${minutes}:00Z`);
+  const localHours = utcDate.getHours().toString().padStart(2, '0');
+  const localMinutes = utcDate.getMinutes().toString().padStart(2, '0');
+  return `${localHours}:${localMinutes}`;
+}
+
+function setTimeZone(tz) {
+  globalTimeZone = tz;
+  localStorage.setItem('timeZone', tz);
+
+  document.querySelectorAll('.tz-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tz === tz);
+  });
+}
+
+function formatReserveDates(dates) {
+  if (!dates || dates.length === 0) return '';
+
+  const sorted = dates.slice().sort();
+
+  const rows = sorted.map(dateStr => {
+    const d = new Date(dateStr + 'T00:00:00');
+    const formattedDate = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    const dayOfWeek = d.toLocaleDateString(undefined, { weekday: 'short' });
+    return `
+      <tr>
+        <td>${formattedDate}</td>
+        <td>${dayOfWeek}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <table class="dates-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Day</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+  `;
+}
+
+function openReserveModal(crewId, crewName) {
+  const reserve = reservePoolByCrewId[crewId];
+  if (!reserve) return;
+
+  const localStart = convertUTCtoLocal(reserve.oncall_window_utc.start);
+  const localEnd = convertUTCtoLocal(reserve.oncall_window_utc.end);
+  const datesHtml = formatReserveDates(reserve.dates);
+
+  let timeWindowHtml;
+  if (globalTimeZone === 'UTC') {
+    timeWindowHtml = `
+      <div style="margin-bottom: 6px;">${reserve.oncall_window_utc.start} — ${reserve.oncall_window_utc.end}</div>
+      <div style="font-size: 11px; color: var(--muted);">${localStart} — ${localEnd} (Local)</div>
+    `;
+  } else {
+    timeWindowHtml = `
+      <div style="margin-bottom: 6px;">${localStart} — ${localEnd}</div>
+      <div style="font-size: 11px; color: var(--muted);">${reserve.oncall_window_utc.start} — ${reserve.oncall_window_utc.end} UTC</div>
+    `;
+  }
+
+  document.getElementById("modalCrewName").textContent = `${crewName} — Reserve Pool`;
+  document.getElementById("modalBody").innerHTML = `
+    <div class="reserve-row">
+      <span class="reserve-label">Crew ID</span>
+      <div class="reserve-value">${crewId}</div>
+    </div>
+    <div class="reserve-row">
+      <span class="reserve-label">Base</span>
+      <div class="reserve-value">${reserve.base}</div>
+    </div>
+    <div class="reserve-row">
+      <span class="reserve-label">On Reserve Dates</span>
+      <div class="reserve-value">${datesHtml}</div>
+    </div>
+    <div class="reserve-row">
+      <span class="reserve-label">On-Call Window (${globalTimeZone})</span>
+      <div class="reserve-value">
+        ${timeWindowHtml}
+      </div>
+    </div>
+    <div class="reserve-row">
+      <span class="reserve-label">Note</span>
+      <div class="reserve-value">${reserve.note}</div>
+    </div>
+  `;
+
+  document.getElementById("reserveModal").classList.add("show");
+}
+
+function closeReserveModal() {
+  document.getElementById("reserveModal").classList.remove("show");
+}
+
+document.getElementById("reserveModal").addEventListener("click", function(event) {
+  if (event.target === this) {
+    closeReserveModal();
+  }
+});
+
+function getRiskLevel(score) {
+  if (score >= 0.6) return 'high';
+  if (score >= 0.3) return 'medium';
+  return 'low';
+}
+
+function openRiskModal(crewId, crewName) {
+  const risk = riskSignalsById[crewId];
+  if (!risk) return;
+
+  const riskLevel = getRiskLevel(risk.disruption_risk_score);
+  const riskLevelClass = `risk-score-${riskLevel}`;
+  const riskLevelText = riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1);
+
+  document.getElementById("riskModalTitle").textContent = `${crewName} — Risk Signals`;
+  document.getElementById("riskModalBody").innerHTML = `
+    <div class="reserve-row">
+      <span class="reserve-label">Crew ID</span>
+      <div class="reserve-value">${crewId}</div>
+    </div>
+    <div class="reserve-row">
+      <span class="reserve-label">Risk Score</span>
+      <div class="reserve-value"><span class="${riskLevelClass}">${(risk.disruption_risk_score * 100).toFixed(0)}% (${riskLevelText} Risk)</span></div>
+    </div>
+    <div class="reserve-row">
+      <span class="reserve-label">As of (UTC)</span>
+      <div class="reserve-value">${new Date(risk.as_of_utc).toLocaleString('en-US', { timeZone: 'UTC' })}</div>
+    </div>
+    <div class="reserve-row">
+      <span class="reserve-label">Risk Drivers</span>
+      <div class="reserve-value">
+        ${risk.drivers.map(driver => `<div class="risk-driver">${driver}</div>`).join('')}
+      </div>
+    </div>
+  `;
+
+  document.getElementById("riskModal").classList.add("show");
+}
+
+function closeRiskModal() {
+  document.getElementById("riskModal").classList.remove("show");
+}
+
+document.getElementById("riskModal").addEventListener("click", function(event) {
+  if (event.target === this) {
+    closeRiskModal();
+  }
+});
+
+function populateBaseFilter(records) {
+  const baseFilter = document.getElementById("baseFilter");
+  const bases = [...new Set(records.map(r => r.base))].sort();
+  bases.forEach(b => {
+    const opt = document.createElement("option");
+    opt.value = b;
+    opt.textContent = b;
+    baseFilter.appendChild(opt);
+  });
+}
+
+function render(records) {
+  const groupsContainer = document.getElementById("groupsContainer");
+  const summaryBar = document.getElementById("summaryBar");
+  groupsContainer.innerHTML = "";
+
+  const searchTerm = document.getElementById("searchBox").value.trim().toLowerCase();
+  const statusFilter = document.getElementById("statusFilter").value;
+  const baseFilter = document.getElementById("baseFilter").value;
+  const reserveFilter = document.getElementById("reserveFilter").value;
+  const riskFilter = document.getElementById("riskFilter").value;
+  const crewFilter = document.getElementById("crewFilter").value;
+  const highlightId = getCrewIdFromLocation();
+
+  const counts = { active: 0, leave: 0, training: 0 };
+  records.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+
+  summaryBar.innerHTML = `
+    <div class="summary-card"><div class="num">${records.length}</div><div class="lbl">Total crew</div></div>
+    <div class="summary-card"><div class="num" style="color:var(--active)">${counts.active}</div><div class="lbl">Active</div></div>
+    <div class="summary-card"><div class="num" style="color:var(--leave)">${counts.leave}</div><div class="lbl">On leave</div></div>
+    <div class="summary-card"><div class="num" style="color:var(--training)">${counts.training}</div><div class="lbl">Training</div></div>
+  `;
+
+  const filtered = records.filter(r => {
+    if (statusFilter !== "all" && r.status !== statusFilter) return false;
+    if (baseFilter !== "all" && r.base !== baseFilter) return false;
+    if (crewFilter !== "all" && r.crew_id !== crewFilter) return false;
+    if (reserveFilter === "on-reserve" && !reservePoolByCrewId[r.crew_id]) return false;
+    if (reserveFilter === "not-reserve" && reservePoolByCrewId[r.crew_id]) return false;
+    if (riskFilter !== "all") {
+      const riskData = riskSignalsById[r.crew_id];
+      if (!riskData) return false;
+      const riskLevel = getRiskLevel(riskData.disruption_risk_score);
+      if (riskFilter === "high-risk" && riskLevel !== "high") return false;
+      if (riskFilter === "medium-risk" && riskLevel !== "medium") return false;
+      if (riskFilter === "low-risk" && riskLevel !== "low") return false;
+    }
+    if (searchTerm) {
+      const match = r.crew_id.toLowerCase().includes(searchTerm) || r.name.toLowerCase().includes(searchTerm);
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  const groups = {};
+  filtered.forEach(r => {
+    if (!groups[r.rank]) groups[r.rank] = [];
+    groups[r.rank].push(r);
+  });
+
+  const groupNames = Object.keys(groups).sort((a, b) => {
+    const ia = RANK_ORDER.indexOf(a);
+    const ib = RANK_ORDER.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+
+  if (groupNames.length === 0) {
+    groupsContainer.innerHTML = `<div class="empty-msg">No crew match the current filters.</div>`;
+    return;
+  }
+
+  groupNames.forEach(name => {
+    const items = groups[name].sort((a, b) => b.seniority - a.seniority);
+    const groupEl = document.createElement("div");
+    groupEl.className = "group";
+
+    const header = document.createElement("div");
+    header.className = "group-header";
+    header.innerHTML = `
+      <span class="caret">▼</span>
+      <h2>${name}</h2>
+      <span class="count">${items.length}</span>
+    `;
+    header.addEventListener("click", () => groupEl.classList.toggle("collapsed"));
+
+    const tilesEl = document.createElement("div");
+    tilesEl.className = "tiles";
+    tilesEl.innerHTML = items.map(r => `
+      <div class="tile ${r.crew_id === highlightId ? "highlight" : ""}" id="crew-${r.crew_id}">
+        <div class="status-bar ${statusClass(r.status)}"></div>
+        <div class="name">${r.name}</div>
+        <div class="crew-id">${r.crew_id}</div>
+        <div class="row"><span>Base</span><span>${r.base}</span></div>
+        <div class="row"><span>Seniority</span><span>${r.seniority} yrs</span></div>
+        <div class="row"><span>Reachability</span><span>${r.reachability_minutes} min</span></div>
+        <div class="ratings">${r.ratings.map(rt => `<span class="rating-pill">${rt}</span>`).join("")}</div>
+        <div>
+          <span class="status-pill ${statusClass(r.status)}">${r.status}</span>
+          <a class="cert-link" href="certifications_mockup.html#crew_id=${encodeURIComponent(r.crew_id)}">Certs</a>
+          <a class="cert-link" href="duty_clocks_mockup.html#crew_id=${encodeURIComponent(r.crew_id)}">Duty</a>
+          ${reservePoolByCrewId[r.crew_id] ? `<button class="reserve-toggle" onclick="openReserveModal('${r.crew_id}', '${r.name}')">Reserve</button>` : ''}
+          ${riskSignalsById[r.crew_id] ? `<button class="risk-toggle" onclick="openRiskModal('${r.crew_id}', '${r.name}')">Risk</button>` : ''}
+        </div>
+      </div>
+    `).join("");
+
+    groupEl.appendChild(header);
+    groupEl.appendChild(tilesEl);
+    groupsContainer.appendChild(groupEl);
+  });
+
+  if (highlightId) {
+    const el = document.getElementById(`crew-${highlightId}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+function populateCrewFilter(records) {
+  const crewFilter = document.getElementById("crewFilter");
+  const sorted = [...records].sort((a, b) => a.crew_id.localeCompare(b.crew_id));
+  sorted.forEach(r => {
+    const opt = document.createElement("option");
+    opt.value = r.crew_id;
+    opt.textContent = `${r.crew_id} — ${r.name}`;
+    crewFilter.appendChild(opt);
+  });
+
+  const crewIdParam = getCrewIdFromLocation();
+  if (crewIdParam && records.some(r => r.crew_id === crewIdParam)) {
+    crewFilter.value = crewIdParam;
+  }
+}
+
+let allRecords = [];
+
+Promise.all([
+  fetch(CREW_URL).then(res => res.json()),
+  fetch(RESERVE_POOL_URL).then(res => res.json()),
+  fetch(RISK_SIGNALS_URL).then(res => res.json())
+])
+  .then(([crew, reservePool, riskSignals]) => {
+    allRecords = crew;
+    reservePoolByCrewId = Object.fromEntries(reservePool.map(r => [r.crew_id, r]));
+    riskSignalsById = Object.fromEntries(riskSignals.map(r => [r.crew_id, r]));
+    document.querySelectorAll('.tz-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tz === globalTimeZone);
+    });
+    populateBaseFilter(allRecords);
+    populateCrewFilter(allRecords);
+    render(allRecords);
+  })
+  .catch(() => {
+    document.getElementById("groupsContainer").innerHTML =
+      `<div class="empty-msg">Could not load data files. Serve this file over HTTP (not file://) so the fetch works, e.g. run a local static server from the project root.</div>`;
+  });
+
+document.getElementById("searchBox").addEventListener("input", () => render(allRecords));
+document.getElementById("statusFilter").addEventListener("change", () => render(allRecords));
+document.getElementById("baseFilter").addEventListener("change", () => render(allRecords));
+document.getElementById("reserveFilter").addEventListener("change", () => render(allRecords));
+document.getElementById("riskFilter").addEventListener("change", () => render(allRecords));
+document.getElementById("crewFilter").addEventListener("change", () => render(allRecords));
+</script>
+
+</div>
+</body>
+</html>

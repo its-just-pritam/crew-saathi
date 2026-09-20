@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Crew Saathi — Certifications</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --panel: #161d2e;
+    --tile: #1c2438;
+    --border: #2a3350;
+    --text: #e6e9f0;
+    --muted: #8892a6;
+    --valid: #35c97f;
+    --expiring: #f2b84b;
+    --expired: #f2554b;
+    --accent: #5b8cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+  }
+  .sidebar {
+    width: 220px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    flex-shrink: 0;
+    height: 100vh;
+    overflow-y: auto;
+    position: fixed;
+    left: 0;
+    top: 0;
+  }
+  .sidebar-logo {
+    padding: 0 20px 24px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo a {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }
+  .sidebar-logo a span {
+    color: var(--accent);
+  }
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-nav a {
+    color: var(--muted);
+    text-decoration: none;
+    padding: 10px 20px;
+    font-size: 13px;
+    transition: color 0.12s ease, background 0.12s ease;
+    border-left: 3px solid transparent;
+  }
+  .sidebar-nav a:hover {
+    color: var(--text);
+    background: rgba(91, 140, 255, 0.1);
+  }
+  .sidebar-nav a.active {
+    color: var(--accent);
+    background: rgba(91, 140, 255, 0.15);
+    border-left-color: var(--accent);
+  }
+  .timezone-selector {
+    padding: 16px 20px;
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+  }
+  .timezone-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .timezone-buttons {
+    display: flex;
+    gap: 6px;
+  }
+  .tz-btn {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .tz-btn:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .tz-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .main-content {
+    margin-left: 220px;
+    flex: 1;
+    padding: 24px 32px 48px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: 0.3px;
+  }
+  h1 span { color: var(--accent); }
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toolbar input, .toolbar select {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .legend .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .summary-bar {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .summary-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    min-width: 120px;
+  }
+  .summary-card .num { font-size: 22px; font-weight: 600; }
+  .summary-card .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .group {
+    margin-bottom: 34px;
+  }
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .group-header h2 {
+    font-size: 15px;
+    margin: 0;
+    text-transform: capitalize;
+    letter-spacing: 0.4px;
+  }
+  .group-header .count {
+    font-size: 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 2px 10px;
+    border-radius: 999px;
+  }
+  .group-header .caret {
+    color: var(--muted);
+    transition: transform 0.15s ease;
+    font-size: 11px;
+  }
+  .group.collapsed .caret { transform: rotate(-90deg); }
+  .group.collapsed .tiles { display: none; }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+  }
+  .tile {
+    background: var(--tile);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 14px 12px;
+    position: relative;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+  .tile:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .tile .status-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: 10px 0 0 10px;
+  }
+  .tile .crew-id {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .tile .crew-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .tile .crew-link {
+    color: inherit;
+    text-decoration: none;
+  }
+  .tile .crew-link:hover .crew-id {
+    color: var(--accent);
+  }
+  .tile .row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .tile .row span:last-child { color: var(--text); }
+  .tile .status-pill {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .status-valid { background: rgba(53,201,127,0.15); color: var(--valid); }
+  .status-expiring { background: rgba(242,184,75,0.15); color: var(--expiring); }
+  .status-expired { background: rgba(242,85,75,0.15); color: var(--expired); }
+
+  .status-valid.status-bar { background: var(--valid); }
+  .status-expiring.status-bar { background: var(--expiring); }
+  .status-expired.status-bar { background: var(--expired); }
+
+  .empty-msg {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 20px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <a href="crew_mockup.html">Crew<span>Saathi</span></a>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="crew_mockup.html">Crew Roster</a>
+    <a href="certifications_mockup.html" class="active">Certifications</a>
+    <a href="duty_clocks_mockup.html">Duty Clocks</a>
+    <a href="flights_mockup.html">Flights</a>
+    <a href="rosters_mockup.html">Rosters</a>
+    <a href="rules_mockup.html">Rules</a>
+  </nav>
+  <div class="timezone-selector">
+    <span class="timezone-label">Time Zone</span>
+    <div class="timezone-buttons">
+      <button class="tz-btn active" data-tz="UTC" onclick="setTimeZone('UTC')">UTC</button>
+      <button class="tz-btn" data-tz="LOCAL" onclick="setTimeZone('LOCAL')">Local</button>
+    </div>
+  </div>
+</aside>
+
+<div class="main-content">
+<header>
+  <h1>Crew<span>Saathi</span> — Certifications</h1>
+  <div class="toolbar">
+    <input id="searchBox" type="text" placeholder="Search crew id or name…" />
+    <select id="statusFilter">
+      <option value="all">All statuses</option>
+      <option value="valid">Valid</option>
+      <option value="expiring">Expiring (≤ 90 days)</option>
+      <option value="expired">Expired</option>
+    </select>
+    <select id="crewFilter">
+      <option value="all">All crew</option>
+    </select>
+  </div>
+</header>
+
+<div class="legend">
+  <span><span class="dot" style="background:var(--valid)"></span>Valid</span>
+  <span><span class="dot" style="background:var(--expiring)"></span>Expiring within 90 days</span>
+  <span><span class="dot" style="background:var(--expired)"></span>Expired</span>
+  <span>Reference date: 2026-09-20</span>
+</div>
+
+<div class="summary-bar" id="summaryBar"></div>
+
+<div id="groupsContainer"></div>
+
+<script>
+const REFERENCE_DATE = new Date("2026-09-20T00:00:00");
+const EXPIRING_WINDOW_DAYS = 90;
+const DATA_URL = "data/certifications.json";
+const CREW_URL = "data/crew.json";
+
+let crewById = {};
+let globalTimeZone = localStorage.getItem('timeZone') || 'UTC';
+
+function setTimeZone(tz) {
+  globalTimeZone = tz;
+  localStorage.setItem('timeZone', tz);
+
+  document.querySelectorAll('.tz-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tz === tz);
+  });
+}
+
+// Try hash first (server won't strip it), then fall back to query string
+function getCrewIdFromLocation() {
+  // Try new hash format: #crew_id=...
+  if (window.location.hash) {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const fromHash = hashParams.get("crew_id");
+    if (fromHash) return decodeURIComponent(fromHash);
+  }
+  // Fall back to query string for backward compatibility
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get("crew_id");
+  if (fromQuery) return fromQuery;
+  // Fall back to old hash format: #crew-...
+  const hashMatch = window.location.hash.match(/crew-(.+)$/);
+  return hashMatch ? decodeURIComponent(hashMatch[1]) : null;
+}
+
+function daysBetween(a, b) {
+  return Math.round((b - a) / (1000 * 60 * 60 * 24));
+}
+
+function getStatus(validTo) {
+  const toDate = new Date(validTo + "T00:00:00");
+  const diff = daysBetween(REFERENCE_DATE, toDate);
+  if (diff < 0) return "expired";
+  if (diff <= EXPIRING_WINDOW_DAYS) return "expiring";
+  return "valid";
+}
+
+function statusLabel(status, validTo) {
+  const toDate = new Date(validTo + "T00:00:00");
+  const diff = daysBetween(REFERENCE_DATE, toDate);
+  if (status === "expired") return `Expired ${Math.abs(diff)}d ago`;
+  if (status === "expiring") return `Expires in ${diff}d`;
+  return "Valid";
+}
+
+function render(records) {
+  const groupsContainer = document.getElementById("groupsContainer");
+  const summaryBar = document.getElementById("summaryBar");
+  groupsContainer.innerHTML = "";
+
+  const searchTerm = document.getElementById("searchBox").value.trim().toLowerCase();
+  const statusFilter = document.getElementById("statusFilter").value;
+  const crewFilter = document.getElementById("crewFilter").value;
+
+  const enriched = records.map(r => ({
+    ...r,
+    status: getStatus(r.valid_to),
+    crew: crewById[r.crew_id] || null
+  }));
+
+  const counts = { valid: 0, expiring: 0, expired: 0 };
+  enriched.forEach(r => counts[r.status]++);
+
+  summaryBar.innerHTML = `
+    <div class="summary-card"><div class="num">${enriched.length}</div><div class="lbl">Total records</div></div>
+    <div class="summary-card"><div class="num" style="color:var(--valid)">${counts.valid}</div><div class="lbl">Valid</div></div>
+    <div class="summary-card"><div class="num" style="color:var(--expiring)">${counts.expiring}</div><div class="lbl">Expiring soon</div></div>
+    <div class="summary-card"><div class="num" style="color:var(--expired)">${counts.expired}</div><div class="lbl">Expired</div></div>
+  `;
+
+  const filtered = enriched.filter(r => {
+    if (statusFilter !== "all" && r.status !== statusFilter) return false;
+    if (crewFilter !== "all" && r.crew_id !== crewFilter) return false;
+    if (searchTerm) {
+      const nameMatch = r.crew && r.crew.name.toLowerCase().includes(searchTerm);
+      const idMatch = r.crew_id.toLowerCase().includes(searchTerm);
+      if (!nameMatch && !idMatch) return false;
+    }
+    return true;
+  });
+
+  const groups = {};
+  filtered.forEach(r => {
+    if (!groups[r.cert_type]) groups[r.cert_type] = [];
+    groups[r.cert_type].push(r);
+  });
+
+  const groupNames = Object.keys(groups).sort();
+
+  if (groupNames.length === 0) {
+    groupsContainer.innerHTML = `<div class="empty-msg">No certifications match the current filters.</div>`;
+    return;
+  }
+
+  groupNames.forEach(name => {
+    const items = groups[name].sort((a, b) => a.valid_to.localeCompare(b.valid_to));
+    const groupEl = document.createElement("div");
+    groupEl.className = "group";
+
+    const header = document.createElement("div");
+    header.className = "group-header";
+    header.innerHTML = `
+      <span class="caret">▼</span>
+      <h2>${name.replace(/_/g, " ")}</h2>
+      <span class="count">${items.length}</span>
+    `;
+    header.addEventListener("click", () => groupEl.classList.toggle("collapsed"));
+
+    const tilesEl = document.createElement("div");
+    tilesEl.className = "tiles";
+    tilesEl.innerHTML = items.map(r => `
+      <div class="tile">
+        <div class="status-bar status-${r.status}"></div>
+        <a class="crew-link" href="crew_mockup.html?crew_id=${encodeURIComponent(r.crew_id)}#crew-${encodeURIComponent(r.crew_id)}">
+          <div class="crew-id">${r.crew_id}${r.crew ? ` — ${r.crew.name}` : ""}</div>
+        </a>
+        <div class="crew-meta">${r.crew ? `${r.crew.rank} · ${r.crew.base}` : "Crew record not found"}</div>
+        <div class="row"><span>Valid from</span><span>${r.valid_from}</span></div>
+        <div class="row"><span>Valid to</span><span>${r.valid_to}</span></div>
+        <div class="status-pill status-${r.status}">${statusLabel(r.status, r.valid_to)}</div>
+      </div>
+    `).join("");
+
+    groupEl.appendChild(header);
+    groupEl.appendChild(tilesEl);
+    groupsContainer.appendChild(groupEl);
+  });
+}
+
+function populateCrewFilter(crew) {
+  const crewFilter = document.getElementById("crewFilter");
+  const sorted = [...crew].sort((a, b) => a.crew_id.localeCompare(b.crew_id));
+  sorted.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.crew_id;
+    opt.textContent = `${c.crew_id} — ${c.name}`;
+    crewFilter.appendChild(opt);
+  });
+
+  const crewIdParam = getCrewIdFromLocation();
+  if (crewIdParam && crewById[crewIdParam]) {
+    crewFilter.value = crewIdParam;
+  }
+}
+
+let allRecords = [];
+
+Promise.all([
+  fetch(DATA_URL).then(res => res.json()),
+  fetch(CREW_URL).then(res => res.json())
+])
+  .then(([certs, crew]) => {
+    crewById = Object.fromEntries(crew.map(c => [c.crew_id, c]));
+    allRecords = certs;
+    document.querySelectorAll('.tz-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tz === globalTimeZone);
+    });
+    populateCrewFilter(crew);
+    render(allRecords);
+  })
+  .catch(() => {
+    document.getElementById("groupsContainer").innerHTML =
+      `<div class="empty-msg">Could not load ${DATA_URL} or ${CREW_URL}. Serve this file over HTTP (not file://) so the fetch works, e.g. run a local static server from the project root.</div>`;
+  });
+
+document.getElementById("searchBox").addEventListener("input", () => render(allRecords));
+document.getElementById("statusFilter").addEventListener("change", () => render(allRecords));
+document.getElementById("crewFilter").addEventListener("change", () => render(allRecords));
+</script>
+
+</div>
+</body>
+</html>
