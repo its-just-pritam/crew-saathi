@@ -325,6 +325,41 @@
     padding: 20px;
     text-align: center;
   }
+
+  .days-section {
+  margin-top: 16px;
+  }
+  .days-section h3 {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 0 0 8px;
+  }
+  .day-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .day-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .day-date {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .day-times {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    gap: 12px;
+  }
 </style>
 </head>
 <body>
@@ -487,8 +522,8 @@ function render(rosters) {
             <div class="pairing-meta">${p.days.map(d => formatDate(d.date)).join(", ")}</div>
           </div>
           <div>
-            <div class="pairing-meta">Report: ${formatTime(p.days[0].report_utc)}</div>
-            <div class="pairing-meta">Release: ${formatTime(p.days[p.days.length - 1].release_utc)}</div>
+            <div class="pairing-meta">Days: ${p.days.length}</div>
+            <div class="pairing-meta">Report Range: ${formatTime(p.days[0].report_utc)} – ${formatTime(p.days[p.days.length - 1].release_utc)}</div>
           </div>
           <div>
             <div class="pairing-meta">${p.crew.length} crew</div>
@@ -510,16 +545,28 @@ function render(rosters) {
               `).join("")}
             </div>
           </div>
-          <div class="flights-section">
-            <h3>Flights</h3>
-            <div class="flights-list">
-              ${p.days.flatMap(d => d.flights).map(f => {
-                const parts = f.split('-');
-                const flightNum = parts[0];
-                const date = parts.slice(1).join('-');
-                return `<a href="flights_mockup.html#flight=${flightNum}&date=${date}" class="flight-badge">${f}</a>`;
-              }).join("")}
-            </div>
+          
+          <div class="days-section">
+            <h3>Daily Schedule</h3>
+            ${p.days.map(d => `
+              <div class="day-card">
+                <div class="day-card-header">
+                  <div class="day-date">${formatDate(d.date)} (${d.date})</div>
+                  <div class="day-times">
+                    <span><strong>Report:</strong> ${formatTime(d.report_utc)}</span>
+                    <span><strong>Release:</strong> ${formatTime(d.release_utc)}</span>
+                  </div>
+                </div>
+                <div class="flights-list">
+                  ${d.flights.map(f => {
+                    const parts = f.split('-');
+                    const flightNum = parts[0];
+                    const date = parts.slice(1).join('-');
+                    return `<a href="flights_mockup.html#flight=${flightNum}&date=${date}" class="flight-badge">${f}</a>`;
+                  }).join("")}
+                </div>
+              </div>
+            `).join("")}
           </div>
         </div>
       </div>
