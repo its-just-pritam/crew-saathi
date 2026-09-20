@@ -386,8 +386,11 @@
   <h1>Crew<span>Admin</span> — Flights</h1>
   <div class="toolbar">
     <input id="searchBox" type="text" placeholder="Search flight number or station…" />
-    <select id="stationFilter">
-      <option value="all">All stations</option>
+    <select id="depStationFilter">
+      <option value="all">All departure stations</option>
+    </select>
+    <select id="arrStationFilter">
+      <option value="all">All arrival stations</option>
     </select>
     <select id="aircraftFilter">
       <option value="all">All aircraft</option>
@@ -477,19 +480,32 @@ function formatDate(dateStr) {
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: '2-digit' });
 }
 
-function populateStationFilter(records) {
-  const stationFilter = document.getElementById("stationFilter");
-  const stations = new Set();
+function populateStationFilters(records) {
+  const depStationFilter = document.getElementById("depStationFilter");
+  const arrStationFilter = document.getElementById("arrStationFilter");
+
+  const depStations = new Set();
+  const arrStations = new Set();
+
   records.forEach(r => {
-    stations.add(r.dep_station);
-    stations.add(r.arr_station);
+    depStations.add(r.dep_station);
+    arrStations.add(r.arr_station);
   });
-  const sorted = [...stations].sort();
-  sorted.forEach(s => {
+
+  const depSorted = [...depStations].sort();
+  depSorted.forEach(s => {
     const opt = document.createElement("option");
     opt.value = s;
     opt.textContent = s;
-    stationFilter.appendChild(opt);
+    depStationFilter.appendChild(opt);
+  });
+
+  const arrSorted = [...arrStations].sort();
+  arrSorted.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = s;
+    arrStationFilter.appendChild(opt);
   });
 }
 
@@ -506,11 +522,13 @@ function populateAircraftFilter(records) {
 
 function getFilteredRecords(records) {
   const searchTerm = document.getElementById("searchBox").value.trim().toLowerCase();
-  const stationFilter = document.getElementById("stationFilter").value;
+  const depStationFilter = document.getElementById("depStationFilter").value;
+  const arrStationFilter = document.getElementById("arrStationFilter").value;
   const aircraftFilter = document.getElementById("aircraftFilter").value;
 
   return records.filter(r => {
-    if (stationFilter !== "all" && r.dep_station !== stationFilter && r.arr_station !== stationFilter) return false;
+    if (depStationFilter !== "all" && r.dep_station !== depStationFilter) return false;
+    if (arrStationFilter !== "all" && r.arr_station !== arrStationFilter) return false;
     if (aircraftFilter !== "all" && r.aircraft !== aircraftFilter) return false;
     if (searchTerm) {
       const match = r.flight_no.toLowerCase().includes(searchTerm) ||
@@ -657,7 +675,7 @@ function renderGanttView(records) {
         <div class="gantt-row">
           <div class="gantt-flight-no">${r.flight_no}</div>
           <div class="gantt-track">
-            <div class="gantt-bar" style="left:${depPct}%;width:${widthPct}%;" title="${r.flight_no} ${r.dep_station}→${r.arr_station} ${formatTime(r.dep_utc)}">
+            <div class="gantt-bar" style="left:${depPct}%;width:${widthPct}%;" title="${r.flight_no} ${r.dep_station}→${r.arr_station} ${formatTime(r.dep_utc)} • Block: ${r.block_hours}h">
               <span class="gantt-bar-text">${r.dep_station}</span>
               <span class="gantt-bar-text">${r.arr_station}</span>
             </div>
@@ -725,7 +743,7 @@ fetch(FLIGHTS_URL)
     document.querySelectorAll('.tz-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tz === globalTimeZone);
     });
-    populateStationFilter(allRecords);
+    populateStationFilters(allRecords);
     populateAircraftFilter(allRecords);
 
     const params = getQueryParams();
@@ -746,7 +764,8 @@ document.querySelectorAll(".tab-button").forEach(button => {
 });
 
 document.getElementById("searchBox").addEventListener("input", () => render(allRecords));
-document.getElementById("stationFilter").addEventListener("change", () => render(allRecords));
+document.getElementById("depStationFilter").addEventListener("change", () => render(allRecords));
+document.getElementById("arrStationFilter").addEventListener("change", () => render(allRecords));
 document.getElementById("aircraftFilter").addEventListener("change", () => render(allRecords));
 </script>
 

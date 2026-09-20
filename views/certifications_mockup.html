@@ -310,6 +310,8 @@
     <select id="crewFilter">
       <option value="all">All crew</option>
     </select>
+    <input id="validFromFilter" type="date" placeholder="Valid from…" />
+    <input id="validToFilter" type="date" placeholder="Valid to…" />
   </div>
 </header>
 
@@ -387,6 +389,8 @@ function render(records) {
   const searchTerm = document.getElementById("searchBox").value.trim().toLowerCase();
   const statusFilter = document.getElementById("statusFilter").value;
   const crewFilter = document.getElementById("crewFilter").value;
+  const validFromFilter = document.getElementById("validFromFilter").value;
+  const validToFilter = document.getElementById("validToFilter").value;
 
   const enriched = records.map(r => ({
     ...r,
@@ -407,6 +411,8 @@ function render(records) {
   const filtered = enriched.filter(r => {
     if (statusFilter !== "all" && r.status !== statusFilter) return false;
     if (crewFilter !== "all" && r.crew_id !== crewFilter) return false;
+    if (validFromFilter && r.valid_from < validFromFilter) return false;
+    if (validToFilter && r.valid_to > validToFilter) return false;
     if (searchTerm) {
       const nameMatch = r.crew && r.crew.name.toLowerCase().includes(searchTerm);
       const idMatch = r.crew_id.toLowerCase().includes(searchTerm);
@@ -502,6 +508,8 @@ Promise.all([
 document.getElementById("searchBox").addEventListener("input", () => render(allRecords));
 document.getElementById("statusFilter").addEventListener("change", () => render(allRecords));
 document.getElementById("crewFilter").addEventListener("change", () => render(allRecords));
+document.getElementById("validFromFilter").addEventListener("change", () => render(allRecords));
+document.getElementById("validToFilter").addEventListener("change", () => render(allRecords));
 </script>
 
 </div>

@@ -488,11 +488,11 @@ function render(rosters) {
           </div>
           <div>
             <div class="pairing-meta">Report: ${formatTime(p.days[0].report_utc)}</div>
-            <div class="pairing-meta">Release: ${formatTime(p.days[0].release_utc)}</div>
+            <div class="pairing-meta">Release: ${formatTime(p.days[p.days.length - 1].release_utc)}</div>
           </div>
           <div>
             <div class="pairing-meta">${p.crew.length} crew</div>
-            <div class="pairing-meta">${p.days[0].flights.length} flights</div>
+            <div class="pairing-meta">${p.days.reduce((sum, d) => sum + d.flights.length, 0)} flights</div>
           </div>
           <div class="pairing-caret">▶</div>
         </div>
@@ -513,7 +513,7 @@ function render(rosters) {
           <div class="flights-section">
             <h3>Flights</h3>
             <div class="flights-list">
-              ${p.days[0].flights.map(f => {
+              ${p.days.flatMap(d => d.flights).map(f => {
                 const parts = f.split('-');
                 const flightNum = parts[0];
                 const date = parts.slice(1).join('-');
